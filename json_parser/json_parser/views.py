@@ -25,7 +25,9 @@ def test_view(request):
 def parse_json(request):
     json = request.body
     json_string = None
+    
 
+    # Got this piece of code from the "loads" function of json library
     if isinstance(json,str):
         json_string = json
     elif isinstance(json, (bytes,bytearray)):
