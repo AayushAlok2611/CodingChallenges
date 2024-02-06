@@ -1,5 +1,7 @@
-
 class JsonParsingService:
+    """
+    This accepst json in the format of string and returns python's dictionary
+    """
     OPEN_CURLY_BRACE = '{'
     CLOSE_CURLY_BRACE = '}'
     COMMA = ','
@@ -10,101 +12,110 @@ class JsonParsingService:
     DOUBLE_QUOTE = '"'
 
     def __init__(self,json_string) -> None:
-        self.json_string = json_string
+        self.json_string = self.get_json_string_after_skipping_unncessary_characters(json_string)
         self.idx = 0
     
-
-    def skipWhitespaces(self):
-        while self.idx < len(self.json_string) and self.json_string[self.idx]==' ':
-            self.idx += 1
+    def is_char_needed(self,ch):
+        is_significant_character = ch in [
+            self.OPEN_CURLY_BRACE,
+            self.CLOSE_CURLY_BRACE,
+            self.OPEN_SQAURE_BRACE,
+            self.CLOSE_SQUARE_BRACE,
+            self.COLON,
+            self.COMMA,
+            self.DOUBLE_QUOTE,
+            self.DECIMAL,
+        ]
+        return ch.isalpha() or ch.isdigit() or is_significant_character
     
     def consume(self,char):
         while self.idx < len(self.json_string) and self.json_string[self.idx]==char:
             self.idx += 1
     
-    
-    
-    def parseValue(self):
-        currentChar = self.json_string[self.idx]
+    def get_json_string_after_skipping_unncessary_characters(self, json_string):
+        ans = ""
+        i = 0
+        while i < len(json_string):
+            if self.is_char_needed(json_string[i]):
+                ans = ans + json_string[i]
+            i += 1
+        return ans
 
+    
+    def parse_value(self):
+        currentChar = self.json_string[self.idx]
+        
         if currentChar == self.OPEN_CURLY_BRACE:
-            return self.parseObject()
+            return self.parse_object()
         elif currentChar == self.OPEN_SQAURE_BRACE:
-            return self.parseArray()
+            return self.parse_array()
         elif currentChar == self.DOUBLE_QUOTE:
-            return self.parseString()
+            return self.parse_string()
         elif currentChar.isdigit() or currentChar == '-':
-            return self.parseNumber()
+            return self.parse_number()
         elif currentChar == 't' or currentChar == 'f':
-            return self.parseBoolean()
+            return self.parse_boolean()
         elif currentChar == 'n': 
-            return self.parseNull()
+            return self.parse_null()
 
         raise Exception("Invalid JSON")
     
 
 
-    def parseObject(self):
-        # skip whit spaces between { and first key's double quote
-        self.skipWhitespaces()
+    def parse_object(self):
         properties = dict()
 
         # move idx
         self.consume(self.OPEN_CURLY_BRACE)
 
         while self.idx< len(self.json_string) and self.json_string[self.idx]!=self.CLOSE_CURLY_BRACE:
-            key = self.parseString()
 
-            self.skipWhitespaces()
+            key = self.parse_string()
+
             self.consume(self.COLON)
 
-            value = self.parseValue()
-            properties[key] = value
+            value = self.parse_value()
 
-            self.skipWhitespaces()
+            properties[key] = value
 
             # Check for a comma, indicating more properties
             if self.json_string[self.idx] == self.COMMA:
                 self.consume(self.COMMA)
-                self.skipWhitespaces()
-        
+
         # move idx ahead of closing curly brace
         self.consume(self.CLOSE_CURLY_BRACE)
         return properties
 
-    def parseArray(self):
+    def parse_array(self):
         # move idx ahead of opening square brace
         self.consume(self.OPEN_SQAURE_BRACE) 
-        self.skipWhitespaces()
 
         elements = []
         while self.idx< len(self.json_string) and self.json_string[self.idx]!=self.CLOSE_SQUARE_BRACE:
             # Parse array element
-            element = self.parseValue()
+            element = self.parse_value()
             elements.append(element)
 
-            self.skipWhitespaces()
 
             # Check for a comma, indicating more elements
             if self.json_string[self.idx] == self.COMMA:
                 self.consume(self.COMMA)
-                self.skipWhitespaces()
             
         # move idx ahead of closing sqaure brace
         self.consume(self.CLOSE_SQUARE_BRACE)
         return elements
 
-    def parseNumber(self):
+    def parse_number(self):
         startIndex = self.idx
 
         # Consume digits and optional decimal point
         while self.json_string[self.idx].isdigit() or self.json_string[self.idx]== '.':
             self.idx += 1
 
-        numberStr = self.json_string[startIndex, self.idx]
+        numberStr = self.json_string[startIndex: self.idx]
         return float(numberStr)
 
-    def parseBoolean(self): 
+    def parse_boolean(self): 
         boolStr = ""
 
         while self.idx < len(self.json_string) and self.json_string[self.idx].isalpha():
@@ -113,23 +124,21 @@ class JsonParsingService:
         
 
         if boolStr == "true":
-            return True;
+            return True
         elif boolStr == "false":
             return False
 
         raise Exception("Invalid boolean value")
 
-    def parseNull(self):
+    def parse_null(self):
         # moving self.idx ahead "null"
         while self.idx < len(self.json_string) and self.json_string[self.idx].isalpha():        
             self.idx += 1
         return None
 
-    def parseString(self):
+    def parse_string(self):
         # move idx ahead of starting double quote
         self.consume(self.DOUBLE_QUOTE)
-
-        self.skipWhitespaces()
 
         key = ""
         while self.idx < len(self.json_string) and self.json_string[self.idx]!=self.DOUBLE_QUOTE:
@@ -142,5 +151,4 @@ class JsonParsingService:
 
     def parse(self): 
         # skipping whitespaces between start of jsonString and 1st {
-        self.skipWhitespaces() 
-        return self.parseValue()
+        return self.parse_value()
