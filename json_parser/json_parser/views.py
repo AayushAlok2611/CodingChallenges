@@ -39,5 +39,11 @@ def parse_json(request):
 
     if len(json_string) > 0:
         parsed_json = JsonParsingService(json_string).parse()
+    
+    return_string = "The parsed JSON is an object of type {} \n".format(type(parsed_json))
+
+    for key,value in parsed_json.items():
+        s = "key = {} and key-type ={} , value={} and value-type={}.\n".format(key,type(key),value,type(value))
+        return_string = return_string + s
         
-    return HttpResponse(parsed_json)
+    return HttpResponse(return_string)
