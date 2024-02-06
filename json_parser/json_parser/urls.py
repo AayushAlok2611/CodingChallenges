@@ -20,5 +20,6 @@ from json_parser import views
 
 urlpatterns = [
     path("test/", views.test_view),
+    path("parse/",views.parse_json),
     path('admin/', admin.site.urls),
 ]
